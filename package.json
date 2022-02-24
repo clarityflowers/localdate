@@ -1,0 +1,27 @@
+{
+    "name": "@ridereport/localdate",
+    "version": "1.0.0",
+    "description": "Immutable objects for working with dates, weeks, and months independent of time",
+    "main": "index.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "test": "jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/RideReport/localdate.git"
+    },
+    "author": "Ride Report",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/RideReport/localdate/issues"
+    },
+    "homepage": "https://github.com/RideReport/localdate#readme",
+    "dependencies": {},
+    "devDependencies": {
+        "@types/jest": "^27.4.1",
+        "jest": "^27.5.1"
+    }
+}
