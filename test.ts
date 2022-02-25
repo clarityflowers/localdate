@@ -1,4 +1,4 @@
-const { LocalDate, LocalWeek, LocalMonth, Quarter } = require("./index");
+import { LocalDate, LocalWeek, LocalMonth, Quarter } from "./index";
 
 // I don't know how to test LocalDate.fromDateInTz.
 // If you figure out how to correctly mock date.protoType.toLocaleDateString()

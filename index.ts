@@ -1,13 +1,24 @@
-// @ts-check
-
 /**
  * Classes for manipulating days, weeks, and months without needing to worry
  * about time zones.
- * @module @ridereport/localdate
  */
 
-/** @param {number[]} args */
-function range(...args) {
+/**
+ * Get a list of incremental numbers with a given start and end.
+ *
+ * @param from - the starting number, inclusive.
+ * @param to - the ending number, exclusive.
+ */
+function range(from: number, to: number): number[];
+
+/**
+ * Get a list of incremental numbers, starting at zero.
+ *
+ * @param to – the number of items in the list.
+ */
+function range(to: number): number[];
+
+function range(...args: [number] | [number, number]) {
     let from = 0,
         to = 0;
     if (args.length === 1) {
@@ -16,22 +27,24 @@ function range(...args) {
         from = args[0];
         to = args[1];
     }
-    const result = [];
+    const result: number[] = [];
     for (let i = from; i < to; i++) {
         result.push(i);
     }
     return result;
 }
 
-class DateFormatError extends Error {
-    constructor(date) {
+export class DateFormatError extends Error {
+    constructor(date: any) {
         super(`Date is not in a valid format: ${date}`);
     }
 }
 
-/**
- * @typedef {{start: LocalDate, end: LocalDate}} LocalDatePeriod
- */
+/** A range of calendary days, without any knowledge of time of day or timezones.*/
+export interface LocalDatePeriod {
+    start: LocalDate;
+    end: LocalDate;
+}
 
 /**
  * Represents a day in time, without any knowledge of attached timezones. Allows us
@@ -40,26 +53,11 @@ class DateFormatError extends Error {
  *
  * A lot of this involves taking advantage of the `toLocaleDateString` function,
  * which is the only browser built-in that understands timezones.
- *
- * @class
- * @implements LocalDatePeriod
- * @typicalname date
- * @name LocalDate
  */
-class LocalDate {
-    /**
-     * @type {Date}
-     * @private
-     * @readonly
-     */
-    date;
+export class LocalDate implements LocalDatePeriod {
+    private readonly date: Date;
 
-    /**
-     * @param {number} year
-     * @param {number} month
-     * @param {number} day
-     */
-    constructor(year, month, day) {
+    constructor(year: number, month: number, day: number) {
         this.date = new Date(2000, 1, 1);
         this.date.setFullYear(year, month - 1, day);
     }
@@ -68,7 +66,7 @@ class LocalDate {
         return this.date.getFullYear();
     }
     /**
-     * Get the month, 1-indexed so 1 is January
+     * Gets the month, 1-indexed so 1 is January
      */
     get month() {
         return this.date.getMonth() + 1;
@@ -99,18 +97,16 @@ class LocalDate {
         return new LocalMonth(this.year, this.month);
     }
     toQuarter() {
-        return new Quarter(this.year, Math.trunc((this.month - 1) / 3) + 1);
+        return new Quarter(
+            this.year,
+            (Math.trunc((this.month - 1) / 3) + 1) as QuarterNumber
+        );
     }
-    /**
-     * Get an array of dates from this date to the target, inclusive
-     * @param {LocalDate} to
-     */
-    range(to) {
+    /** Get an array of dates from this date to the target, inclusive */
+    range(to: LocalDate) {
         const greater = to.toString() > this.toString();
-        /** @type LocalDate */
-        let current = this;
-        /** @type LocalDate[] */
-        const result = [];
+        let current: LocalDate = this;
+        const result: LocalDate[] = [];
         while (!current.equals(to)) {
             result.push(current);
             current = greater ? current.plusDays(1) : current.minusDays(1);
@@ -119,19 +115,16 @@ class LocalDate {
         return result;
     }
 
-    /** @param {number} days */
-    plusDays(days) {
+    plusDays(days: number) {
         // js dates roll the days over, so the 35th of January is converted
         // to the 4th of February
         return new LocalDate(this.year, this.month, this.day + days);
     }
-    /** @param {number} days */
-    minusDays(days) {
+    minusDays(days: number) {
         return this.plusDays(-days);
     }
 
-    /** @param {LocalDate} date */
-    equals(date) {
+    equals(date: LocalDate) {
         return (
             date.year === this.year &&
             date.month === this.month &&
@@ -139,18 +132,15 @@ class LocalDate {
         );
     }
 
-    /** @param {LocalDate} date */
-    isBefore(date) {
+    isBefore(date: LocalDate) {
         return this.toString() < date.toString();
     }
 
-    /** @param {LocalDate} date */
-    isAfter(date) {
+    isAfter(date: LocalDate) {
         return this.toString() > date.toString();
     }
 
-    /** @param {string} date */
-    static fromDateString(date) {
+    static fromDateString(date: string) {
         const parts = date.split("-");
         if (parts.length !== 3) throw new DateFormatError(date);
         const [year, month, day] = parts.map((n) => parseInt(n, 10));
@@ -159,11 +149,7 @@ class LocalDate {
         }
         return new LocalDate(year, month, day);
     }
-    /**
-     * @param {Date} date
-     * @param {string} timeZone
-     */
-    static fromDateInTz(date, timeZone) {
+    static fromDateInTz(date: Date, timeZone: string) {
         // yes, this is a weird hack
         // it works tho and is actually how most libraries that don't involve
         // 100mb imports do it too :(
@@ -181,12 +167,10 @@ class LocalDate {
         );
         return new LocalDate(year, month, day);
     }
-    /** @param {string} timeZone */
-    static todayInTz(timeZone) {
+    static todayInTz(timeZone: string) {
         return LocalDate.fromDateInTz(new Date(), timeZone);
     }
-    /** @param {Date} date */
-    static fromDate(date) {
+    static fromDate(date: Date) {
         return new LocalDate(
             date.getFullYear(),
             date.getMonth() + 1,
@@ -208,31 +192,21 @@ class LocalDate {
     }
 }
 
-/** @param {number} number */
-const formatToTwoDigits = (number) => {
+const formatToTwoDigits = (number: number) => {
     return ("" + number).padStart(2, "0");
 };
 
 /**
  * Represents a week without a timezone attached.
- *
- * @implements LocalDatePeriod
- * @typicalname week
  */
-class LocalWeek {
-    /**
-     * @type LocalDate
-     * @readonly
-     */
-    monday;
+export class LocalWeek implements LocalDatePeriod {
+    readonly monday: LocalDate;
 
     /**
      * There's no standard representation of a week, so we accept any day
      * from that week as a valid reference to it
-     *
-     * @param {LocalDate} date
      */
-    constructor(date) {
+    constructor(date: LocalDate) {
         this.monday = date.plusDays(-date.weekday);
     }
 
@@ -240,23 +214,19 @@ class LocalWeek {
         return this.monday.plusDays(6);
     }
 
-    /** @param {number} weeks */
-    plusWeeks(weeks) {
+    plusWeeks(weeks: number) {
         return new LocalWeek(this.monday.plusDays(7 * weeks));
     }
-    /** @param {number} weeks */
-    minusWeeks(weeks) {
+    minusWeeks(weeks: number) {
         return this.plusWeeks(-weeks);
     }
 
-    /** @param {LocalWeek} week */
-    isBefore(week) {
-        return this.monday.isBefore(week.monday);
+    isBefore(date: LocalWeek) {
+        return this.monday.isBefore(date.monday);
     }
 
-    /** @param {LocalWeek} week */
-    isAfter(week) {
-        return this.monday.isAfter(week.monday);
+    isAfter(date: LocalWeek) {
+        return this.monday.isAfter(date.monday);
     }
 
     toDays() {
@@ -266,7 +236,7 @@ class LocalWeek {
         return `${this.monday.toString()}--${this.sunday.toString()}`;
     }
 
-    get start() {
+    get start(): LocalDate {
         /** The first day of the week.
          *
          * Part of the {@link LocalDatePeriod} interface.
@@ -285,46 +255,38 @@ class LocalWeek {
 
 /**
  * Represents a month from a specific year, without a timezone attached.
- *
- * @implements LocalDatePeriod
- * @typicalname month
  */
-class LocalMonth {
-    /**
-     * @type LocalDate
-     * @readonly
-     */
-    first;
+export class LocalMonth implements LocalDatePeriod {
+    private readonly date: LocalDate;
 
     /**
      * This handles weird entries for month, so "0" will be the December
      * of the previous year, and "15" will the March of the next year
-     *
-     * @param {number} year
-     * @param {number} month
      */
-    constructor(year, month) {
-        this.first = new LocalDate(year, month, 1);
+    constructor(year: number, month: number) {
+        this.date = new LocalDate(year, month, 1);
     }
 
     get year() {
-        return this.first.year;
+        return this.date.year;
     }
 
     get month() {
-        return this.first.month;
+        return this.date.month;
+    }
+
+    get first() {
+        return this.date;
     }
 
     get last() {
         return this.plusMonths(1).first.minusDays(1);
     }
 
-    /** @param {number} months */
-    plusMonths(months) {
+    plusMonths(months: number) {
         return new LocalMonth(this.year, this.month + months);
     }
-    /** @param {number} months */
-    minusMonths(months) {
+    minusMonths(months: number) {
         return this.plusMonths(-months);
     }
 
@@ -336,17 +298,14 @@ class LocalMonth {
         return this.first.weekday;
     }
 
-    /** @param {LocalMonth} month */
-    isAfter(month) {
+    isAfter(month: LocalMonth) {
         return this.toString() > month.toString();
     }
-    /** @param {LocalMonth} month */
-    isBefore(month) {
+    isBefore(month: LocalMonth) {
         return this.toString() < month.toString();
     }
 
-    /** @param {LocalMonth} month */
-    equals(month) {
+    equals(month: LocalMonth) {
         return this.year === month.year && this.month === month.month;
     }
 
@@ -355,8 +314,7 @@ class LocalMonth {
      * days of that week are in the month.
      */
     toWeeks() {
-        /** @type LocalWeek[] */
-        const result = [];
+        const result: LocalWeek[] = [];
         let week = this.first.toLocalWeek();
         while (
             week.monday.toLocalMonth().equals(this) ||
@@ -372,13 +330,11 @@ class LocalMonth {
         return `${this.year}-${formatToTwoDigits(this.month)}`;
     }
 
-    /** @param {LocalDate} date */
-    static fromLocalDate(date) {
+    static fromLocalDate(date: LocalDate) {
         return new LocalMonth(date.year, date.month);
     }
 
-    /** @param {string} date */
-    static fromString(date) {
+    static fromString(date: string) {
         const parts = date.split("-");
         if (parts.length !== 2) throw new DateFormatError(date);
         const [year, month] = parts.map((s) => parseInt(s, 10));
@@ -386,8 +342,7 @@ class LocalMonth {
         return new LocalMonth(year, month);
     }
 
-    /** @param {number} year */
-    static listForYear(year) {
+    static listForYear(year: number) {
         return range(1, 13).map((month) => new LocalMonth(year, month));
     }
 
@@ -408,53 +363,31 @@ class LocalMonth {
     }
 }
 
-/**
- * @typedef {1 | 2 | 3 | 4} QuarterNumber
+type QuarterNumber = 1 | 2 | 3 | 4;
 
-/**
- * @implements LocalDatePeriod
- * @typicalname quarter
- */
-class Quarter {
-    /**
-     * @type number
-     * @readonly */
-    year;
-    /**
-     * @type number
-     * @readonly
-     */
-    quarter;
+export class Quarter implements LocalDatePeriod {
+    readonly year: number;
+    readonly quarter: QuarterNumber;
 
-    /**
-     * @param {number} year
-     * @param {number} quarter
-     */
-    constructor(year, quarter) {
+    constructor(year: number, quarter: QuarterNumber) {
         this.year = year;
         this.quarter = quarter;
     }
 
-    get start() {
+    get start(): LocalDate {
         return new LocalDate(this.year, (this.quarter - 1) * 3 + 1, 1);
     }
-    get end() {
+    get end(): LocalDate {
         return this.plusQuarters(1).start.minusDays(1);
     }
 
-    /**
-     * @param {number} quarters
-     */
-    plusQuarters(quarters) {
+    plusQuarters(quarters: number) {
         const count = this.year * 4 + this.quarter + quarters;
         // This will not handle negative years correctly
-        return new Quarter(Math.trunc(count / 4), count % 4);
+        return new Quarter(Math.trunc(count / 4), (count % 4) as QuarterNumber);
     }
 
-    /**
-     * @param {number} quarters
-     */
-    minusQuarters(quarters) {
+    minusQuarters(quarters: number) {
         return this.plusQuarters(-quarters);
     }
 
@@ -462,11 +395,3 @@ class Quarter {
         return `Q${this.quarter} ${this.year}`;
     }
 }
-
-module.exports = {
-    DateFormatError,
-    LocalDate,
-    LocalMonth,
-    LocalWeek,
-    Quarter,
-};

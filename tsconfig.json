@@ -4,16 +4,17 @@
         "sourceMap": true,
         "strictNullChecks": true,
         "esModuleInterop": true,
-        "module": "esnext",
+        "module": "CommonJS",
         // this must be set to `preserve` so that babel-plugin-react-intl-auto
         // can properly generate ids.
         "jsx": "preserve",
-        "target": "es5",
+        "target": "es6",
         "allowJs": true,
         "moduleResolution": "node",
         "resolveJsonModule": true,
         "skipLibCheck": true,
         "checkJs": true,
+        "declaration": true,
         "lib": ["es2015", "es2017", "es2019.array"]
     }
 }

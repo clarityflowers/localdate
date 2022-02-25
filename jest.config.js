@@ -1,4 +1,5 @@
 module.exports = {
-    moduleFileExtensions: ["js"],
+    moduleFileExtensions: ["js", "ts"],
     moduleDirectories: ["node_modules"],
+    preset: "ts-jest",
 };
