@@ -1,4 +1,4 @@
-# @ridereport/localdate
+# localdate
 
 Immutable objects for working with dates, weeks, and months independent of time
 
